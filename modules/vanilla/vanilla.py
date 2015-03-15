@@ -13,6 +13,7 @@ from models.counters import PerfCounter
 from models import custom_modules
 from models import models
 from models import transforms
+from models.roles import Roles
 from controllers import sites
 import logging
 
@@ -58,7 +59,7 @@ class VanillaForumsTag(tags.BaseTag):
         url = course['VANILLA_EMBED_URL']
         return cElementTree.XML(
             """
-<div style='width: 750px;'>
+<div id="forum">
   <script>window.location.hash = '/categories/%s';</script><script type="text/javascript" src="//%s/js/embed.js"></script><noscript>Please enable JavaScript to view discussions.</noscript>
 </div>""" % (
     cgi.escape(category), cgi.escape(url)))
@@ -97,7 +98,7 @@ def get_jsconnect_string(user, request, client_id, secret_key, secure=True):
 
     if secure:
         if not 'client_id' in request:
-            sec_error = error("invalid_request", "The client_id parameter is missing."+client_id)
+            sec_error = error("invalid_request", "The client_id parameter is missing.")
         elif request['client_id'] != client_id:
             sec_error = error("invalid_client", "Unknown client " + request['client_id'] + ".  Expected: "+client_id)
         elif not 'timestamp' in request and not 'signature' in request:
@@ -112,9 +113,9 @@ def get_jsconnect_string(user, request, client_id, secret_key, secure=True):
         elif abs(current_ts - vanilla_ts) > 30 * 60:
             sec_error = error("invalid_request", "The timestamp is invalid.")
         else:  # make sure the timestamp's signature checks out.
-            vanilla_sig = hashlib.md5(str(vanilla_ts) + secret_key).hexdigest()
+            vanilla_sig = hashlib.sha1(str(vanilla_ts) + secret_key).hexdigest()
             if vanilla_sig != request["signature"]:
-                sec_error = error("access_denied", "Signature invalid. "+vanilla_sig+"...."+request["signature"])
+                sec_error = error("access_denied", "Signature invalid")
 
     result = {}
 
@@ -149,7 +150,7 @@ def sign_jsconnect_string(data, client_id, secret_key, set_data=False):
     # sort data, set key to lowercase, encode key=value as UTF-8, url encode
     sorted_data = [(k.lower().encode('UTF-8'), data[k].encode('UTF-8')) for k in sorted(data.keys())]
     sig_str = urllib.urlencode(sorted_data)
-    signature = hashlib.md5(sig_str + secret_key).hexdigest()
+    signature = hashlib.sha1(sig_str + secret_key).hexdigest()
 
     if set_data:
         data['client_id'] = client_id
@@ -175,6 +176,10 @@ class AuthHandler(webapp2.RequestHandler):
         logging.debug("vanilla request: " + str(param_map))
 
         user = users.get_current_user()
+        if Roles.is_course_admin(self.app_context):
+            role= "administrator"
+        else:
+            role="member"
 
         logging.debug(str(user))
 
