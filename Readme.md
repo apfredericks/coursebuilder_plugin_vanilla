@@ -15,6 +15,15 @@ from modules.vanilla import vanilla
 vanilla.register_module().enable()
 
 ```
+###CSS
+Add the following code to your course CSS file:
+```
+#vanilla-comments iframe{
+		width: 1px !important;
+        min-width: 100% !important;
+        *width: 100% !important;
+}
+```
 
 ####`views/`
 These files will overwrite the existing views in your Coursebuilder install.  Any customizations made to the released versions of these views will need to be recreated.  These new views add the following functionality to Coursebuilder:
