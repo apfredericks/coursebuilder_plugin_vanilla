@@ -184,7 +184,7 @@ class AuthHandler(webapp2.RequestHandler):
         logging.debug(str(user))
 
         if user:
-            student = Student.get_enrolled_student_by_email(user.email())
+            student = Student.get_enrolled_student_by_user(user)
             user = {
                 "name": student.name,
                 "email": user.email(),
